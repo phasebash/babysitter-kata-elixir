@@ -56,5 +56,25 @@ defmodule WorkTimeTest do
     test "can make the difference between an PM and AM" do
       assert difference("4:00 PM", "6:00 AM") == 14
     end
+
+    test "is rounded up to nearest hour when end time exceeds the :00" do
+      assert difference("4:00 AM", "6:10 AM") == 3
+    end
+
+    test "is rounded up to nearest hour when start time is off the hour" do
+      assert difference("4:20 AM", "6:00 AM") == 2
+    end
+
+    test "is not rounded up to nearest hour when total time is an integer of hours" do
+      assert difference("4:10 AM", "6:10 AM") == 2
+    end
+
+    test "is rounded up to nearest hour across am and pm" do
+      assert difference("4:00 PM", "6:10 AM") == 15
+    end
+
+    test "is rounded up to nearest hour across am and pm and when start time is off the hour" do
+      assert difference("11:10 PM", "1:00 AM") == 2
+    end
   end
 end

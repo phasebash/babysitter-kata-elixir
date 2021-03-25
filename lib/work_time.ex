@@ -30,19 +30,30 @@ defmodule WorkTime do
   end
 
   def difference(%WorkTime{} = start_time, %WorkTime{} = end_time) do
-    diff = end_time.hour - start_time.hour
+    spans_two_days = start_time.ampm != end_time.ampm && end_time.ampm == :AM
+    minutes_worked = canonicalize(end_time, spans_two_days) - canonicalize(start_time)
 
-    if start_time.ampm != end_time.ampm do
-      diff + 12
+    hours = div(minutes_worked, 60)
+    round_up = if rem(minutes_worked, 60) > 0, do: 1, else: 0
+
+    hours + round_up
+  end
+
+  def canonicalize(%WorkTime{} = time, shift \\ false) do
+    hour = if shift, do: time.hour + 24, else: time.hour
+    minutes = time.minute + hour * 60 + if time.ampm == :PM, do: 12 * 60, else: 0
+
+    if shift do
+      minutes
     else
-      diff
+      minutes
     end
   end
 
-  defp form_result(pieces) do
-    with {:ok, h} <- pieces |> Enum.at(0) |> Integer.parse(10) |> elem(0) |> validate_hour,
-         {:ok, m} <- pieces |> Enum.at(1) |> Integer.parse(10) |> elem(0) |> validate_mins,
-         {:ok, a} <- pieces |> Enum.at(2) |> String.to_atom() |> validate_ampm,
+  defp form_result([hours, minutes, ampm]) do
+    with {:ok, h} <- Integer.parse(hours, 10) |> elem(0) |> validate_hour,
+         {:ok, m} <- Integer.parse(minutes, 10) |> elem(0) |> validate_mins,
+         {:ok, a} <- ampm |> String.to_atom() |> validate_ampm,
          do: {:ok, %WorkTime{hour: h, minute: m, ampm: a}}
   end
 
