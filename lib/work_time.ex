@@ -1,6 +1,6 @@
-defmodule TimeParser do
+defmodule WorkTime do
   @moduledoc """
-  Documentation for `TimeParser`.
+  Documentation for `WorkTime`.
   """
 
   @doc """
@@ -8,13 +8,18 @@ defmodule TimeParser do
 
   ## Examples
 
-      iex> TimeParser.parse("6:00 PM")
-      {:ok, [hour: 6, minute: 0, ampm: :PM]}
+      iex> WorkTime.parse("6:00 PM")
+      {:ok, %WorkTime{hour: 6, minute: 0, ampm: :PM}}
 
-      iex> TimeParser.parse("13:00 PM")
+      iex> WorkTime.parse("13:00 PM")
       {:error, "hour greater than 12"}
 
   """
+
+  defstruct hour: nil,
+            minute: nil,
+            ampm: nil
+
   def parse(time) do
     result = Regex.run(~r/(\d?\d):(\d\d) (AM|PM)/, time, capture: :all_but_first)
 
@@ -24,11 +29,21 @@ defmodule TimeParser do
     end
   end
 
+  def difference(%WorkTime{} = start_time, %WorkTime{} = end_time) do
+    diff = end_time.hour - start_time.hour
+
+    if start_time.ampm != end_time.ampm do
+      diff + 12
+    else
+      diff
+    end
+  end
+
   defp form_result(pieces) do
     with {:ok, h} <- pieces |> Enum.at(0) |> Integer.parse(10) |> elem(0) |> validate_hour,
          {:ok, m} <- pieces |> Enum.at(1) |> Integer.parse(10) |> elem(0) |> validate_mins,
          {:ok, a} <- pieces |> Enum.at(2) |> String.to_atom() |> validate_ampm,
-         do: {:ok, [hour: h, minute: m, ampm: a]}
+         do: {:ok, %WorkTime{hour: h, minute: m, ampm: a}}
   end
 
   defp validate_hour(hour) when hour < 1 do
